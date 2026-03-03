@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Vision Stream</title>
+<style>
+body {
+    font-family: Arial;
+    background:#111;
+    color:#eee;
+    padding:20px;
+}
+
+#chat {
+    max-width:700px;
+    margin:auto;
+}
+
+.msg {
+    margin:10px 0;
+    padding:10px;
+    border-radius:10px;
+}
+
+.nova {
+    background:#401515;
+    border-left:4px solid red;
+}
+
+.orion {
+    background:#151540;
+    border-left:4px solid cyan;
+}
+
+.human {
+    background:#333;
+}
+
+#topbar {
+    margin-bottom:15px;
+}
+</style>
+</head>
+
+<body>
+<div id="chat">
+
+<h2>Vision Stream</h2>
+
+<div id="topbar">
+    <button onclick="setMode('debate')">Debate Mode</button>
+    <button onclick="setMode('agreement')">Agreement Mode</button>
+    <span> Depth: <span id="depth">0</span></span>
+</div>
+
+<div id="messages"></div>
+
+<input id="text" placeholder="Enter topic or message..." style="width:80%">
+<button onclick="send()">Send</button>
+
+</div>
+
+<script>
+async function loadMessages() {
+    const res = await fetch("/messages");
+    const data = await res.json();
+
+    const container = document.getElementById("messages");
+    container.innerHTML = "";
+
+    data.messages.forEach(msg => {
+        let cls = "human";
+        if (msg.speaker.includes("Nova")) cls = "nova";
+        if (msg.speaker.includes("Orion")) cls = "orion";
+
+        container.innerHTML += `
+            <div class="msg ${cls}">
+                <b>${msg.speaker}</b>: ${msg.text}
+            </div>
+        `;
+    });
+
+    document.getElementById("depth").innerText = data.depth;
+}
+
+async function send() {
+    const input = document.getElementById("text");
+
+    await fetch("/send", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({text: input.value})
+    });
+
+    input.value = "";
+    loadMessages();
+}
+
+async function setMode(m) {
+    await fetch("/mode", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({mode: m})
+    });
+}
+
+setInterval(loadMessages, 3000);
+loadMessages();
+</script>
+
+</body>
+</html>

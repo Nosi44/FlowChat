@@ -151,7 +151,11 @@ def send():
         return jsonify({"status": "empty"})
 
     human_last_message = text
-    human_replies_left = 2
+    
+    if len(text) < 20:
+        human_replies_left = random.randint(2, 5)
+    else:
+        human_replies_left = random.randint(5, 20)
 
     messages.append({
         "speaker": "Human",

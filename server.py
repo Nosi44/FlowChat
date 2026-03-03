@@ -8,7 +8,6 @@ from openai import OpenAI
 
 app = Flask(__name__)
 
-
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 messages = []
@@ -51,17 +50,14 @@ def generate_reply(speaker):
     }
 
     if human_last_message and human_replies_left > 0:
-        chance = random.random()
-
-        if chance > 0.3:  # 70% шанс ещё говорить по теме
-            focus_block = f"""
-            Человек сказал: "{human_last_message}".
-            Ответь на это.
-            """
-            human_replies_left -= 1
-        else:
-            focus_block = "Плавно возвращайтесь к своей беседе."
-            human_replies_left -= 1
+        focus_block = f"""
+        Человек сказал: "{human_last_message}".
+        Ответь именно на это.
+        Не меняй тему.
+        """
+        human_replies_left -= 1
+    else:
+        focus_block = "Продолжайте свою неспешную беседу."
 
     if length_mode == "short":
         length_rule = """
@@ -77,11 +73,7 @@ def generate_reply(speaker):
     system_prompt = f"""
     Ты {speaker}.
     Вы сидите во дворе на пеньках.
-    Щёлкаете семечки, вокруг царит атмосфера спокойствия умиротворения, 
-    чирикают птицы, ПАСУТСЯ КОРОВЫ, вдалеке поскрипывает дерево, 
-    шелестит солома на крышах сельских домиков, 
-    неподалеку слышно как играются дети за свинарником, 
-    ведуте беседы на разные темы.
+    Щёлкаете семечки, пьёте пиво.
     Никуда не спешите.
 
     {personalities[speaker]}
@@ -159,11 +151,7 @@ def send():
         return jsonify({"status": "empty"})
 
     human_last_message = text
-    
-    if len(text) < 20:
-        human_replies_left = random.randint(2, 5)
-    else:
-        human_replies_left = random.randint(5, 20)
+    human_replies_left = 2
 
     messages.append({
         "speaker": "Human",

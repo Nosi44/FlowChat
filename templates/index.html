@@ -14,7 +14,7 @@ body {
     max-width:700px;
     margin:auto;
     display:flex;
-    flex-direction:column-reverse;
+    flex-direction:column;
     height:90vh;
 }
 
@@ -26,7 +26,7 @@ body {
     flex:1;
     overflow-y:auto;
     display:flex;
-    flex-direction:column;
+    flex-direction:column-reverse; /* новые сверху */
 }
 
 .msg {
@@ -39,7 +39,24 @@ body {
 .orion { background:#151540; border-left:4px solid cyan; }
 .human { background:#333; }
 
-button { margin:3px; }
+button {
+    margin:3px;
+    padding:6px 10px;
+    background:#222;
+    color:#eee;
+    border:1px solid #444;
+    cursor:pointer;
+    transition: all 0.2s ease;
+}
+
+button:hover {
+    background:#333;
+}
+
+button.active {
+    background:#0a84ff;
+    border-color:#0a84ff;
+}
 </style>
 </head>
 
@@ -48,24 +65,27 @@ button { margin:3px; }
 
 <h2>Vision Stream</h2>
 
+<!-- 1️⃣ КНОПКИ -->
 <div id="controls">
     <b>Скорость:</b>
-    <button onclick="setSpeed('slow')">Медленно</button>
-    <button onclick="setSpeed('normal')">Нормально</button>
-    <button onclick="setSpeed('fast')">Быстро</button>
+    <button data-group="speed" data-value="slow" onclick="setSpeed('slow'); setActive('speed','slow')">Медленно</button>
+    <button data-group="speed" data-value="normal" onclick="setSpeed('normal'); setActive('speed','normal')" class="active">Нормально</button>
+    <button data-group="speed" data-value="fast" onclick="setSpeed('fast'); setActive('speed','fast')">Быстро</button>
 
     <b>Длина:</b>
-    <button onclick="setLength('short')">Коротко</button>
-    <button onclick="setLength('long')">Длиннее</button>
+    <button data-group="length" data-value="short" onclick="setLength('short'); setActive('length','short')" class="active">Коротко</button>
+    <button data-group="length" data-value="long" onclick="setLength('long'); setActive('length','long')">Длиннее</button>
 
-    <button onclick="togglePause()">Пауза</button>
+    <button id="pauseBtn" onclick="togglePause()">Пауза</button>
 
     | Depth: <span id="depth">0</span>
 </div>
 
+<!-- 2️⃣ ПОЛЕ ВВОДА -->
 <input id="text" placeholder="Напиши что-нибудь..." style="margin-bottom:8px;">
 <button onclick="send()">Send</button>
 
+<!-- 3️⃣ ЧАТ -->
 <div id="messages"></div>
 
 </div>
@@ -73,6 +93,16 @@ button { margin:3px; }
 <script>
 
 let paused = false;
+
+function setActive(group, value) {
+    const buttons = document.querySelectorAll(`button[data-group='${group}']`);
+    buttons.forEach(btn => {
+        btn.classList.remove("active");
+        if (btn.dataset.value === value) {
+            btn.classList.add("active");
+        }
+    });
+}
 
 async function loadMessages() {
     const res = await fetch("/messages");
@@ -94,7 +124,6 @@ async function loadMessages() {
     });
 
     document.getElementById("depth").innerText = data.depth;
-
 }
 
 async function send() {
@@ -134,6 +163,10 @@ async function togglePause() {
         headers: {"Content-Type": "application/json"},
         body: JSON.stringify({paused: paused})
     });
+
+    const btn = document.getElementById("pauseBtn");
+    btn.textContent = paused ? "Продолжить" : "Пауза";
+    btn.classList.toggle("active", paused);
 }
 
 document.getElementById("text").addEventListener("keypress", function(e) {

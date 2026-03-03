@@ -103,6 +103,12 @@ async function setMode(m) {
     });
 }
 
+document.getElementById("text").addEventListener("keypress", function(e) {
+    if (e.key === "Enter") {
+        send();
+    }
+});
+
 setInterval(loadMessages, 3000);
 loadMessages();
 </script>

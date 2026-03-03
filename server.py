@@ -12,10 +12,13 @@ client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 messages = []
 topic = "Вечер во дворе. Жизнь, работа, люди."
-mode = "yard"
 depth = 0
 human_last_message = None
 human_replies_left = 0
+
+# 🔥 Новые глобальные настройки
+speed_mode = "normal"   # slow / normal / fast
+length_mode = "short"   # short / long
 
 
 def build_context():
@@ -24,15 +27,14 @@ def build_context():
 
 
 def generate_reply(speaker):
-    global topic, depth, human_last_message, human_replies_left
+    global topic, depth, human_last_message, human_replies_left, length_mode
 
     personalities = {
         "Orion": "Спокойный мужик. Говорит просто. Любит рассуждать.",
         "Nova": "Более эмоциональный. Может пошутить. Чуть философствует."
     }
 
-    focus_block = ""
-
+    # 🔥 Реакция на человека
     if human_last_message and human_replies_left > 0:
         focus_block = f"""
         Человек недавно сказал: "{human_last_message}".
@@ -41,6 +43,20 @@ def generate_reply(speaker):
         human_replies_left -= 1
     else:
         focus_block = "Продолжайте свою неспешную беседу."
+
+    # 🔥 Управление длиной
+    if length_mode == "short":
+        length_rule = """
+        - 1–2 коротких предложения.
+        - 5–7 слов в предложении.
+        - До 20 слов всего.
+        """
+    else:
+        length_rule = """
+        - Можно 2–4 предложения.
+        - До 60 слов.
+        - Но всё равно разговорный стиль.
+        """
 
     system_prompt = f"""
     Ты {speaker}.
@@ -56,11 +72,9 @@ def generate_reply(speaker):
 
     Правила:
     - Всегда только русский язык.
-    - 1–2 коротких предложения.
-    - 5–7 слов в предложении.
-    - До 20 слов всего.
     - Простой разговорный стиль.
     - Не обращайся к аудитории.
+    {length_rule}
     """
 
     context = build_context()
@@ -78,10 +92,20 @@ def generate_reply(speaker):
 
 
 def bot_loop():
+    global speed_mode
+
     speakers = ["Orion", "Nova"]
 
     while True:
-        time.sleep(random.randint(10, 30))
+        # 🔥 Управление скоростью
+        if speed_mode == "fast":
+            delay = random.randint(5, 12)
+        elif speed_mode == "slow":
+            delay = random.randint(25, 40)
+        else:
+            delay = random.randint(10, 20)
+
+        time.sleep(delay)
 
         speaker = random.choice(speakers)
         reply = generate_reply(speaker)
@@ -110,7 +134,7 @@ def send():
         return jsonify({"status": "empty"})
 
     human_last_message = text
-    human_replies_left = 2  # пару реплик от дедов
+    human_replies_left = 2  # деды реагируют пару раз
 
     messages.append({
         "speaker": "Human",
@@ -121,11 +145,28 @@ def send():
     return jsonify({"status": "ok"})
 
 
+# 🔥 Новый API для управления настройками
+@app.route("/settings", methods=["POST"])
+def change_settings():
+    global speed_mode, length_mode
+    data = request.json
+
+    speed_mode = data.get("speed", speed_mode)
+    length_mode = data.get("length", length_mode)
+
+    return jsonify({
+        "speed": speed_mode,
+        "length": length_mode
+    })
+
+
 @app.route("/messages")
 def get_messages():
     return jsonify({
         "messages": messages,
-        "depth": depth
+        "depth": depth,
+        "speed": speed_mode,
+        "length": length_mode
     })
 
 

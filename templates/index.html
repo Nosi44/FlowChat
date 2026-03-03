@@ -38,6 +38,10 @@ body {
 #topbar {
     margin-bottom:15px;
 }
+
+button {
+    margin:3px;
+}
 </style>
 </head>
 
@@ -47,14 +51,29 @@ body {
 <h2>Vision Stream</h2>
 
 <div id="topbar">
-    <button onclick="setMode('debate')">Debate Mode</button>
-    <button onclick="setMode('agreement')">Agreement Mode</button>
-    <span> Depth: <span id="depth">0</span></span>
+    <div>
+        <b>Скорость:</b>
+        <button onclick="setSpeed('slow')">Медленно</button>
+        <button onclick="setSpeed('normal')">Нормально</button>
+        <button onclick="setSpeed('fast')">Быстро</button>
+    </div>
+
+    <div>
+        <b>Длина:</b>
+        <button onclick="setLength('short')">Коротко</button>
+        <button onclick="setLength('long')">Длиннее</button>
+    </div>
+
+    <div>
+        Depth: <span id="depth">0</span> |
+        Speed: <span id="speed">normal</span> |
+        Length: <span id="length">short</span>
+    </div>
 </div>
 
 <div id="messages"></div>
 
-<input id="text" placeholder="Enter topic or message..." style="width:80%">
+<input id="text" placeholder="Напиши что-нибудь..." style="width:80%">
 <button onclick="send()">Send</button>
 
 </div>
@@ -67,7 +86,7 @@ async function loadMessages() {
     const container = document.getElementById("messages");
     container.innerHTML = "";
 
-    data.messages.forEach(msg => {
+    data.messages.slice().reverse().forEach(msg => {
         let cls = "human";
         if (msg.speaker.includes("Nova")) cls = "nova";
         if (msg.speaker.includes("Orion")) cls = "orion";
@@ -80,6 +99,8 @@ async function loadMessages() {
     });
 
     document.getElementById("depth").innerText = data.depth;
+    document.getElementById("speed").innerText = data.speed;
+    document.getElementById("length").innerText = data.length;
 }
 
 async function send() {
@@ -95,11 +116,19 @@ async function send() {
     loadMessages();
 }
 
-async function setMode(m) {
-    await fetch("/mode", {
+async function setSpeed(s) {
+    await fetch("/settings", {
         method: "POST",
         headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({mode: m})
+        body: JSON.stringify({speed: s})
+    });
+}
+
+async function setLength(l) {
+    await fetch("/settings", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({length: l})
     });
 }
 

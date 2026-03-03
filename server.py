@@ -50,14 +50,17 @@ def generate_reply(speaker):
     }
 
     if human_last_message and human_replies_left > 0:
-        focus_block = f"""
-        Человек сказал: "{human_last_message}".
-        Ответь именно на это.
-        Не меняй тему.
-        """
-        human_replies_left -= 1
-    else:
-        focus_block = "Продолжайте свою неспешную беседу."
+        chance = random.random()
+
+        if chance > 0.3:  # 70% шанс ещё говорить по теме
+            focus_block = f"""
+            Человек сказал: "{human_last_message}".
+            Ответь на это.
+            """
+            human_replies_left -= 1
+        else:
+            focus_block = "Плавно возвращайтесь к своей беседе."
+            human_replies_left -= 1
 
     if length_mode == "short":
         length_rule = """

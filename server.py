@@ -16,9 +16,9 @@ depth = 0
 human_last_message = None
 human_replies_left = 0
 
-# 🔥 Новые глобальные настройки
-speed_mode = "normal"   # slow / normal / fast
-length_mode = "short"   # short / long
+speed_mode = "normal"
+length_mode = "short"
+paused = False
 
 
 def build_context():
@@ -26,36 +26,48 @@ def build_context():
     return "\n".join([f"{m['speaker']}: {m['text']}" for m in last_messages])
 
 
+def clean_reply(reply):
+    reply = reply.strip()
+
+    # убираем возможные префиксы
+    for name in ["Orion:", "Nova:"]:
+        if reply.startswith(name):
+            reply = reply.replace(name, "", 1).strip()
+
+    # если модель вдруг написала за двоих — берём только первую строку
+    if "\n" in reply:
+        reply = reply.split("\n")[0].strip()
+
+    return reply
+
+
 def generate_reply(speaker):
-    global topic, depth, human_last_message, human_replies_left, length_mode
+    global depth, human_last_message, human_replies_left
 
     personalities = {
-        "Orion": "Спокойный мужик. Говорит просто. Любит рассуждать.",
-        "Nova": "Более эмоциональный. Может пошутить. Чуть философствует."
+        "Orion": "Спокойный мужик. Говорит просто. Без пафоса.",
+        "Nova": "Чуть эмоциональнее. Может подшутить. Но без спектакля."
     }
 
-    # 🔥 Реакция на человека
     if human_last_message and human_replies_left > 0:
         focus_block = f"""
-        Человек недавно сказал: "{human_last_message}".
-        Отреагируй на это.
+        Человек сказал: "{human_last_message}".
+        Ответь именно на это.
+        Не меняй тему.
         """
         human_replies_left -= 1
     else:
         focus_block = "Продолжайте свою неспешную беседу."
 
-    # 🔥 Управление длиной
     if length_mode == "short":
         length_rule = """
         - 1–2 коротких предложения.
-        - 5–7 слов в предложении.
         - До 20 слов всего.
         """
     else:
         length_rule = """
         - Можно 2–4 предложения.
         - До 60 слов.
-        - Но всё равно разговорный стиль.
         """
 
     system_prompt = f"""
@@ -66,14 +78,15 @@ def generate_reply(speaker):
 
     {personalities[speaker]}
 
-    Тема: {topic}
-
     {focus_block}
 
     Правила:
-    - Всегда только русский язык.
-    - Простой разговорный стиль.
+    - Только русский язык.
+    - Простой разговор.
+    - Не философствуй слишком.
     - Не обращайся к аудитории.
+    - Ты отвечаешь только от своего имени.
+    - Никогда не пиши за другого персонажа.
     {length_rule}
     """
 
@@ -87,21 +100,25 @@ def generate_reply(speaker):
         ]
     )
 
+    reply = clean_reply(response.choices[0].message.content)
     depth += 1
-    return response.choices[0].message.content.strip()
+    return reply
 
 
 def bot_loop():
-    global speed_mode
+    global paused
 
     speakers = ["Orion", "Nova"]
 
     while True:
-        # 🔥 Управление скоростью
+        if paused:
+            time.sleep(1)
+            continue
+
         if speed_mode == "fast":
-            delay = random.randint(5, 12)
+            delay = random.randint(5, 10)
         elif speed_mode == "slow":
-            delay = random.randint(25, 40)
+            delay = random.randint(25, 35)
         else:
             delay = random.randint(10, 20)
 
@@ -134,7 +151,7 @@ def send():
         return jsonify({"status": "empty"})
 
     human_last_message = text
-    human_replies_left = 2  # деды реагируют пару раз
+    human_replies_left = 2
 
     messages.append({
         "speaker": "Human",
@@ -145,18 +162,19 @@ def send():
     return jsonify({"status": "ok"})
 
 
-# 🔥 Новый API для управления настройками
 @app.route("/settings", methods=["POST"])
 def change_settings():
-    global speed_mode, length_mode
+    global speed_mode, length_mode, paused
     data = request.json
 
     speed_mode = data.get("speed", speed_mode)
     length_mode = data.get("length", length_mode)
+    paused = data.get("paused", paused)
 
     return jsonify({
         "speed": speed_mode,
-        "length": length_mode
+        "length": length_mode,
+        "paused": paused
     })
 
 
@@ -166,7 +184,8 @@ def get_messages():
         "messages": messages,
         "depth": depth,
         "speed": speed_mode,
-        "length": length_mode
+        "length": length_mode,
+        "paused": paused
     })
 
 

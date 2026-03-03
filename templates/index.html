@@ -13,35 +13,33 @@ body {
 #chat {
     max-width:700px;
     margin:auto;
+    display:flex;
+    flex-direction:column;
+    height:90vh;
+}
+
+#controls {
+    margin-bottom:10px;
+}
+
+#messages {
+    flex:1;
+    overflow-y:auto;
+    display:flex;
+    flex-direction:column;
 }
 
 .msg {
-    margin:10px 0;
+    margin:6px 0;
     padding:10px;
     border-radius:10px;
 }
 
-.nova {
-    background:#401515;
-    border-left:4px solid red;
-}
+.nova { background:#401515; border-left:4px solid red; }
+.orion { background:#151540; border-left:4px solid cyan; }
+.human { background:#333; }
 
-.orion {
-    background:#151540;
-    border-left:4px solid cyan;
-}
-
-.human {
-    background:#333;
-}
-
-#topbar {
-    margin-bottom:15px;
-}
-
-button {
-    margin:3px;
-}
+button { margin:3px; }
 </style>
 </head>
 
@@ -50,35 +48,32 @@ button {
 
 <h2>Vision Stream</h2>
 
-<div id="topbar">
-    <div>
-        <b>Скорость:</b>
-        <button onclick="setSpeed('slow')">Медленно</button>
-        <button onclick="setSpeed('normal')">Нормально</button>
-        <button onclick="setSpeed('fast')">Быстро</button>
-    </div>
+<div id="controls">
+    <b>Скорость:</b>
+    <button onclick="setSpeed('slow')">Медленно</button>
+    <button onclick="setSpeed('normal')">Нормально</button>
+    <button onclick="setSpeed('fast')">Быстро</button>
 
-    <div>
-        <b>Длина:</b>
-        <button onclick="setLength('short')">Коротко</button>
-        <button onclick="setLength('long')">Длиннее</button>
-    </div>
+    <b>Длина:</b>
+    <button onclick="setLength('short')">Коротко</button>
+    <button onclick="setLength('long')">Длиннее</button>
 
-    <div>
-        Depth: <span id="depth">0</span> |
-        Speed: <span id="speed">normal</span> |
-        Length: <span id="length">short</span>
-    </div>
+    <button onclick="togglePause()">Пауза</button>
+
+    | Depth: <span id="depth">0</span>
 </div>
 
-<div id="messages"></div>
-
-<input id="text" placeholder="Напиши что-нибудь..." style="width:80%">
+<input id="text" placeholder="Напиши что-нибудь..." style="margin-bottom:8px;">
 <button onclick="send()">Send</button>
+
+<div id="messages"></div>
 
 </div>
 
 <script>
+
+let paused = false;
+
 async function loadMessages() {
     const res = await fetch("/messages");
     const data = await res.json();
@@ -86,10 +81,10 @@ async function loadMessages() {
     const container = document.getElementById("messages");
     container.innerHTML = "";
 
-    data.messages.slice().reverse().forEach(msg => {
+    data.messages.forEach(msg => {
         let cls = "human";
-        if (msg.speaker.includes("Nova")) cls = "nova";
-        if (msg.speaker.includes("Orion")) cls = "orion";
+        if (msg.speaker === "Nova") cls = "nova";
+        if (msg.speaker === "Orion") cls = "orion";
 
         container.innerHTML += `
             <div class="msg ${cls}">
@@ -99,8 +94,8 @@ async function loadMessages() {
     });
 
     document.getElementById("depth").innerText = data.depth;
-    document.getElementById("speed").innerText = data.speed;
-    document.getElementById("length").innerText = data.length;
+
+    container.scrollTop = container.scrollHeight;
 }
 
 async function send() {
@@ -132,6 +127,16 @@ async function setLength(l) {
     });
 }
 
+async function togglePause() {
+    paused = !paused;
+
+    await fetch("/settings", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({paused: paused})
+    });
+}
+
 document.getElementById("text").addEventListener("keypress", function(e) {
     if (e.key === "Enter") {
         send();
@@ -140,7 +145,7 @@ document.getElementById("text").addEventListener("keypress", function(e) {
 
 setInterval(loadMessages, 3000);
 loadMessages();
-</script>
 
+</script>
 </body>
 </html>

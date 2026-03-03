@@ -14,7 +14,7 @@ body {
     max-width:700px;
     margin:auto;
     display:flex;
-    flex-direction:column;
+    flex-direction:column-reverse;
     height:90vh;
 }
 
@@ -95,7 +95,6 @@ async function loadMessages() {
 
     document.getElementById("depth").innerText = data.depth;
 
-    container.scrollTop = container.scrollHeight;
 }
 
 async function send() {

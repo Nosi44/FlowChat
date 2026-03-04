@@ -30,7 +30,7 @@ def clean_reply(reply):
     reply = reply.strip()
 
     # убираем возможные префиксы
-    for name in ["Orion:", "Nova:"]:
+    for name in ["Кастет:", "Хлюпик:"]:
         if reply.startswith(name):
             reply = reply.replace(name, "", 1).strip()
 
@@ -45,8 +45,8 @@ def generate_reply(speaker):
     global depth, human_last_message, human_replies_left
 
     personalities = {
-        "Orion": "Спокойный мужик. Говорит просто. Без пафоса.",
-        "Nova": "Чуть эмоциональнее. Может подшутить. Но без спектакля."
+        "Кастет": "все время возмущяется. рассказывает анекдоты про сантехников. очень горидться собой.",
+        "Хлюпик": "постоянно жалуется на жизнь. ненавидит анекдоты. страдает клаустрофобией."
     }
 
     if human_last_message and human_replies_left > 0:
@@ -89,6 +89,7 @@ def generate_reply(speaker):
     - Простой разговор.
     - Не философствуй слишком.
     - Не обращайся к аудитории.
+    - рассказывай анекдоты из интернета.
     - Ты отвечаешь только от своего имени.
     - Никогда не пиши за другого персонажа.
     {length_rule}
@@ -112,7 +113,7 @@ def generate_reply(speaker):
 def bot_loop():
     global paused
 
-    speakers = ["Orion", "Nova"]
+    speakers = ["Кастет", "Хлюпик"]
 
     while True:
         if paused:
